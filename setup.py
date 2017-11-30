@@ -2,6 +2,7 @@ import os
 
 from setuptools import setup, find_packages
 
+
 def read(fname):
     readme_file_path = os.path.join(os.path.dirname(__file__), fname)
 
@@ -28,7 +29,8 @@ setup(
     install_requires=[
         'pylxd',
         'pyopenssl',
-        'pyyaml'
+        'pyyaml',
+        'progress',
     ],
     long_description=read('README.rst'),
     classifiers=[
