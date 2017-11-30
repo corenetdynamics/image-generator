@@ -1,0 +1,22 @@
+connect:
+  url: https://localhost:8443
+  trust-password: openbatontotalsecret
+
+create-container:
+  container-name: image-generation-container
+  container-image-fingerprint: 3927ed0cb91f
+
+copy-files:
+  file-tarball: /etc/image-generator/files.tar
+  file-dest:  /root/files.tar
+
+execute-script:
+  script: oai_image_create.sh
+
+create-image:
+  destination: /tmp/generated-image
+
+clean:
+  tmp-files: True
+  container: True
+  image-store: True
