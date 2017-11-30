@@ -26,10 +26,17 @@ Install via :
 
 .. code:: sh
 
-    pip install .
+    pip install image-generator
 
 How to use
 ----------
+
+It is possible to run it in two way. ``single action`` or with
+``config file``. The config file is a yaml file containing on the root a
+list of action to be executed in order with some paramters.
+
+Each ``action`` has specific paramters that are listed in the following
+section
 
 Configure
 ~~~~~~~~~
@@ -58,23 +65,19 @@ The config file should look like:
 
     execute-script:
       script: < Which script to be executed >
+      clean-tmp-files: False # remove the temporary files used for copying the tarball on the container (default: False)
 
     # lxc always assumes you are in /root, thus take care if you use relative paths to the scripts here
 
     create-image:
       destination: < Path and Name of the image you are saving >
+      alias: "Published by image-generator" # additional alias to give to the created image (default: "Published by image-generator")
 
     # if the destination does not yet contain the ending tar.gz it will be added automatically
 
     clean:
-      tmp-files: < True or False >
-      container: < True or False >
-      image-store: < True or False >
-
-    # Booleans if you want to
-        -   remove the temporary files used for copying the tarball on the container
-        -   remove the container used for creating the lxc image
-        -   remove the image created from the container from your local image store
+      container: < True or False > # remove the container used for creating the lxc image
+      image-store: < True or False > # remove the image created from the container from your local image store
 
     # You can (re)import the images anytime by lxc image import < Your path to the desired image.tar.gz > --alias < Your Alias here >
 
