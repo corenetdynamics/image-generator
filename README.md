@@ -74,12 +74,32 @@ clean:
 
 ### Run
 
+Check the help
+
+```sh
+image-generator --help
+usage: image-generator [-h] [-f FILE] [-d] [-action ACTION] [-params PARAMS]
+                       [-dry]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -f FILE, --file FILE  the file scenario with the action to execute
+  -d, --debug           show debug prints
+  -action ACTION        The action to execute
+  -params PARAMS        The parameters to the action
+  -dry                  Run dryrun
+```
+
+and then run it
+
+```sh
 image-generator -f <PATH-TO-THE-CONFIGURATION-FILE>
+```
 
 ## Uninstall
 
 Uninstall via :
 
 ```sh
-pip uninstall image-generator -y
+pip uninstall image-generator
 ```

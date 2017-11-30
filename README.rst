@@ -84,7 +84,7 @@ The config file should look like:
 Run
 ~~~
 
-image-generator -f
+image-generator -f etc/image.yaml
 
 Uninstall
 ---------
