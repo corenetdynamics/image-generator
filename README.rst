@@ -48,7 +48,7 @@ The config file should look like:
 
     create-container:
       container-name: < The name of the container which will be created >
-      container-image-fingerprint: < The fingeprint of the image which to be used for the container >
+      container-image-fingerprint: < The fingeprint of the image which will be used as base image for the container >
 
     # You do not need the complete image fingerprint, the one shown by lxc image list is enough
 
