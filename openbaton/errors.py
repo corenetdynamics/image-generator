@@ -14,3 +14,7 @@ class ImageCreatedNotFound(_BaseException):
 
 class ExecutionError(_BaseException):
     pass
+
+
+class ParameterError(_BaseException):
+    pass

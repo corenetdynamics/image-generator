@@ -11,7 +11,7 @@ import yaml
 from progress.spinner import Spinner
 
 import openbaton.utils as utils
-from openbaton.errors import MethodNotFound, ImageCreatedNotFound, ExecutionError, _BaseException
+from openbaton.errors import MethodNotFound, ImageCreatedNotFound, ExecutionError, _BaseException, ParameterError
 
 logger = logging.getLogger("img.gen.main")
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -45,29 +45,35 @@ class ImageGenerator(object):
         self.spin = False
 
     def do_connect(self, own_config: dict, **kwargs) -> dict:
-        t = threading.Thread(target=start_spin, args=("Connecting...",))
-        t.start()
+        # t = threading.Thread(target=start_spin, args=("Connecting...",))
+        # t.start()
         if kwargs:
             raise ExecutionError("Connect should be run first, without params!")
         # Authenticate so we are able to use the pylxd libraries
         url = own_config.get('url')
+        if not url:
+            logger.error("connect.url property missing!")
+            raise ParameterError("connect.url property missing!")
         self.logger.debug("Authenticating to: %s" % url)
         trust_password = own_config.get('trust-password')
+        if not trust_password:
+            logger.error("connect.trust_password property missing!")
+            raise ParameterError("connect.trust_password property missing!")
         client = utils.authenticate(url,
                                     trust_password)
         kwargs.update({
             'client': client
         })
-        stop_spin("Connected")
-        t.join()
+        # stop_spin("Connected")
+        # t.join()
         return kwargs
 
     def do_create_container(self, own_config: dict, **kwargs):
-        t = threading.Thread(target=start_spin, args=("Creating container...",))
-        t.start()
+        # t = threading.Thread(target=start_spin, args=("Creating container...",))
+        # t.start()
         client = kwargs.get('client')
         # Read the desired configuration
-        container_name = own_config.get('container-name')
+        container_name = own_config.get('container-name', "image-generator")
         # Check for running containers with the same name and eliminate them
         for container in client.containers.all():
             if container.name == container_name:
@@ -77,6 +83,9 @@ class ImageGenerator(object):
                 container.delete(wait=True)
         self.logger.debug("Checking for images")
         container_image = own_config.get('container-image-fingerprint')
+        if not container_image:
+            logger.error("create-container.container_image is mandatory!")
+            raise ParameterError("create-container.container_image is mandatory!")
         created_fingeprint = None
         for image in client.images.all():
             if image.fingerprint.startswith(container_image):
@@ -92,8 +101,8 @@ class ImageGenerator(object):
                     'container': container,
                     'container_name': container_name,
                 })
-                stop_spin("Created Container successfully")
-                t.join()
+                # stop_spin("Created Container successfully")
+                # t.join()
                 return kwargs
 
         if not created_fingeprint:
@@ -101,11 +110,11 @@ class ImageGenerator(object):
             exit(3)
 
     def do_copy_files(self, own_config: dict, **kwargs):
-        t = threading.Thread(target=start_spin, args=("Copying files...",))
-        t.start()
+        # t = threading.Thread(target=start_spin, args=("Copying files...",))
+        # t.start()
         container = kwargs.get('container')
-        local_tarball = own_config.get("file-tarball")
-        dest = own_config.get("file-dest")
+        local_tarball = own_config.get("file-tarball", "./etc/file.tar")
+        dest = own_config.get("file-dest", "/root/files.tar")
         if os.path.exists(local_tarball):
             # create a temporary file in which we will pass the base64 encoded file-tarball
             tmp_file = "/root/tarball-base64-encoded"
@@ -119,7 +128,7 @@ class ImageGenerator(object):
                     'dest': dest,
                 })
                 stop_spin("Copied files successfully")
-                t.join()
+                # t.join()
                 return kwargs
 
                 # Thus we can also leave the whole loops..
@@ -128,8 +137,8 @@ class ImageGenerator(object):
             exit(1)
 
     def do_execute_script(self, own_config: dict, **kwargs):
-        t = threading.Thread(target=start_spin, args=("Executing scripts",))
-        t.start()
+        # t = threading.Thread(target=start_spin, args=("Executing scripts",))
+        # t.start()
         container = kwargs.get('container')
         dest = kwargs.get('dest')
         tmp_file = kwargs.get('tmp_file')
@@ -139,7 +148,11 @@ class ImageGenerator(object):
         # Then we can also unpack the file-tarball
         unpack = "tar -xvf " + dest + "; "
         # And execute the desired script
-        install = "./" + own_config.get('script')
+        install_script = own_config.get('script')
+        if not install_script:
+            logger.error("execute-script.script is mandatory!")
+            raise ParameterError("execute-script.script is mandatory!")
+        install = "./" + install_script
 
         if not self.params.dry:
             container.execute(['sh', '-c', file_wait_loop + decode + unpack + install])
@@ -150,13 +163,13 @@ class ImageGenerator(object):
         self.logger.debug("Stopping container in order to create the image")
         container.stop(wait=True)
         # Create an image from our container
-        stop_spin("Executed scripts successfully")
-        t.join()
+        # stop_spin("Executed scripts successfully")
+        # t.join()
         return kwargs
 
     def do_create_image(self, own_config: dict, **kwargs):
-        t = threading.Thread(target=start_spin, args=("Creating Image...",))
-        t.start()
+        # t = threading.Thread(target=start_spin, args=("Creating Image...",))
+        # t.start()
         container = kwargs.get('container')
         client = kwargs.get('client')
         container_name = kwargs.get('container_name')
@@ -174,7 +187,7 @@ class ImageGenerator(object):
             if image.fingerprint.startswith(created_fingeprint):
                 logger.debug("Found the published image.. exporting")
                 # And export the image accordingly
-                filename = self.process_steps.get('create-image').get('destination')
+                filename = own_config.get('destination', "gen-image")
                 # Check for the correct file ending
                 if not filename.endswith('tar.gz'):
                     filename = filename + ".tar.gz"
@@ -190,20 +203,22 @@ class ImageGenerator(object):
                     "image": image,
                     "created_fingeprint": created_fingeprint,
                 })
-                stop_spin("Created Image successfully")
-                t.join()
+                # stop_spin("Created Image successfully")
+                # t.join()
                 return kwargs
         raise ImageCreatedNotFound("Create Image was not found! This should not happen...")
 
     def do_clean(self, own_config: dict, **kwargs):
-        t = threading.Thread(target=start_spin, args=("Cleaning",))
-        t.start()
+
         container = kwargs.get('container')
         filename = kwargs.get('filename')
         image = kwargs.get('image')
         created_fingeprint = kwargs.get('created_fingeprint')
         # Check if we want to delete the container
-        if own_config.get('container'):
+        container_delete = own_config.get('container', True)
+        if isinstance(container_delete, str):
+            container_delete = container_delete.lower() == 'true'
+        if container_delete:
             self.logger.debug("Deleting container as it is not needed anymore")
             container.delete()
         if self.params.dry:
@@ -214,11 +229,13 @@ class ImageGenerator(object):
         # subprocess.call(['lxc','image','export',created_fingeprint,config.get('create-image').get('destination')])
 
         # Check if we want to delete the image from the image-store after exporting
-        if own_config.get('image-store'):
+        image_store = own_config.get('image-store', True)
+        if isinstance(image_store, str):
+            image_store = image_store.lower() == 'true'
+        if image_store:
             logger.debug("Deleting image with fingerprint %s" % created_fingeprint)
             image.delete()
-        stop_spin("Clean complete.")
-        t.join()
+
         return kwargs
 
 
@@ -234,8 +251,12 @@ def execute_steps(process_steps: dict, params: dict):
             raise MethodNotFound(
                 "Method with name {} not found in Class `{}`. This should not happen, if you allowed action {} please "
                 "also implement respective method {}".format(mname, img_gen.__class__.__name__, method_name, mname))
-
+        t = threading.Thread(target=start_spin, args=("Starting %s..." % method_name,))
+        t.start()
         method_params.update(method(own_config=process_steps.get(method_name), **method_params))
+        stop_spin("Finished %s." % method_name)
+        t.join()
+    return 0
 
 
 def main():
@@ -243,8 +264,11 @@ def main():
     parser.add_argument("-f", "--file", help="the file scenario with the action to execute")
     parser.add_argument("-d", "--debug", help="show debug prints", action="store_true")
 
-    parser.add_argument("-action", help="The action to execute")
-    parser.add_argument("-params", help="The parameters to the action")
+    parser.add_argument("-action", help="The action to execute", type=str)
+    parser.add_argument("-params",
+                        help="The parameters to the action, to follow the structure `key=value key1=value1 ...`",
+                        nargs='+',
+                        type=str)
 
     parser.add_argument("-dry", help="Run dryrun", action="store_true")
 
@@ -266,20 +290,31 @@ def main():
             logger.error("%s" % msg)
             exit(1)
         logger.debug("Actions are %s" % process_steps.keys())
+        try:
+            execute_steps(process_steps, args)
+        except _BaseException as e:
+            if args.debug:
+                traceback.print_exc()
+            logger.error("Error while ruinnig one command: %s" % e.message)
+
     else:
-        if not args.action:
+        logger.error("Sorry executing single action is not yet supported")
+        exit(5)
+        action = args.action
+        if not action:
             logger.error("Need at least one action")
             exit(2)
-        logger.debug("action: %s" % args.action)
-        logger.debug("params: %s" % args.params)
-        logger.error("Actions are not yet supported...sorry")
-        exit(2)
-
-    try:
+        logger.debug("action: %s" % action)
+        params = args.params
+        logger.debug("params: %s" % params)
+        dict_params = {}
+        for p in params:
+            if "=" in p:
+                key_value = p.split("=")
+                dict_params[key_value[0]] = key_value[1]
+            else:
+                logger.error("Parameters must follow the structure `key=value key1=value1 ...`")
+        process_steps = {
+            action: dict_params
+        }
         execute_steps(process_steps, args)
-    except _BaseException as e:
-        if args.debug:
-            traceback.print_exc()
-        logger.error("Error while ruinnig one command: %s" % e.message)
-
-        # In the end again check for all images
