@@ -38,15 +38,13 @@ def stop_spin(msg: str):
 
 
 class ImageGenerator(object):
-    def __init__(self, logger, params, process_steps: dict):
-        self.logger = logger
+    def __init__(self, lgr, params, process_steps: dict):
+        self.logger = lgr
         self.params = params
         self.process_steps = process_steps
         self.spin = False
 
     def do_connect(self, own_config: dict, **kwargs) -> dict:
-        # t = threading.Thread(target=start_spin, args=("Connecting...",))
-        # t.start()
         if kwargs:
             raise ExecutionError("Connect should be run first, without params!")
         # Authenticate so we are able to use the pylxd libraries
@@ -64,13 +62,9 @@ class ImageGenerator(object):
         kwargs.update({
             'client': client
         })
-        # stop_spin("Connected")
-        # t.join()
         return kwargs
 
     def do_create_container(self, own_config: dict, **kwargs):
-        # t = threading.Thread(target=start_spin, args=("Creating container...",))
-        # t.start()
         client = kwargs.get('client')
         # Read the desired configuration
         container_name = own_config.get('container-name', "image-generator")
@@ -101,8 +95,6 @@ class ImageGenerator(object):
                     'container': container,
                     'container_name': container_name,
                 })
-                # stop_spin("Created Container successfully")
-                # t.join()
                 return kwargs
 
         if not created_fingeprint:
@@ -110,8 +102,6 @@ class ImageGenerator(object):
             exit(3)
 
     def do_copy_files(self, own_config: dict, **kwargs):
-        # t = threading.Thread(target=start_spin, args=("Copying files...",))
-        # t.start()
         container = kwargs.get('container')
         local_tarball = own_config.get("file-tarball", "./etc/file.tar")
         dest = own_config.get("file-dest", "/root/files.tar")
@@ -127,8 +117,6 @@ class ImageGenerator(object):
                     'tmp_file': tmp_file,
                     'dest': dest,
                 })
-                stop_spin("Copied files successfully")
-                # t.join()
                 return kwargs
 
                 # Thus we can also leave the whole loops..
@@ -137,8 +125,6 @@ class ImageGenerator(object):
             exit(1)
 
     def do_execute_script(self, own_config: dict, **kwargs):
-        # t = threading.Thread(target=start_spin, args=("Executing scripts",))
-        # t.start()
         container = kwargs.get('container')
         dest = kwargs.get('dest')
         tmp_file = kwargs.get('tmp_file')
@@ -162,14 +148,9 @@ class ImageGenerator(object):
         # Stop the container when finishing the execution of scripts
         self.logger.debug("Stopping container in order to create the image")
         container.stop(wait=True)
-        # Create an image from our container
-        # stop_spin("Executed scripts successfully")
-        # t.join()
         return kwargs
 
     def do_create_image(self, own_config: dict, **kwargs):
-        # t = threading.Thread(target=start_spin, args=("Creating Image...",))
-        # t.start()
         container = kwargs.get('container')
         client = kwargs.get('client')
         container_name = kwargs.get('container_name')
@@ -203,8 +184,6 @@ class ImageGenerator(object):
                     "image": image,
                     "created_fingeprint": created_fingeprint,
                 })
-                # stop_spin("Created Image successfully")
-                # t.join()
                 return kwargs
         raise ImageCreatedNotFound("Create Image was not found! This should not happen...")
 
@@ -256,7 +235,6 @@ def execute_steps(process_steps: dict, params: dict):
         method_params.update(method(own_config=process_steps.get(method_name), **method_params))
         stop_spin("Finished %s." % method_name)
         t.join()
-    return 0
 
 
 def main():
