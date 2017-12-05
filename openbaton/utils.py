@@ -35,9 +35,8 @@ def ordered_load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
     return yaml.load(stream, OrderedLoader)
 
 
-def authenticate(auth_endpoint: str, trust_password: str) -> LxdClient:
-    _, _, cert_path, key_path = generate_certificates()
-    # auth_endpoint = config.get('connect').get('url')
+def authenticate(auth_endpoint: str, trust_password: str, cert_location: str) -> LxdClient:
+    _, _, cert_path, key_path = generate_certificates(cert_location=cert_location)
     client = LxdClient(endpoint=auth_endpoint,
                        cert=(cert_path, key_path),
                        verify=False,
@@ -64,7 +63,7 @@ def check_config(config: dict) -> (bool, str):
 
 
 def generate_certificates(key_name: str = 'image-generator',
-                          cert_location: str = '/etc/image-generator/lxd',
+                          cert_location: str = '~/.imggen',
                           common_name: str = 'image-generator-lxd',
                           days: int = 364) -> (bytes, bytes):
     if not os.path.exists(cert_location):

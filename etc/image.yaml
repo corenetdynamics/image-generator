@@ -12,11 +12,11 @@ copy-files:
 
 execute-script:
   script: oai_image_create.sh
+  clean-tmp-files: True
 
 create-image:
   destination: /tmp/generated-image
 
 clean:
-  tmp-files: True
   container: True
   image-store: True

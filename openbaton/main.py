@@ -56,6 +56,7 @@ class ImageGenerator(object):
             raise ExecutionError("Connect should be run first, without params!")
         # Authenticate so we are able to use the pylxd libraries
         url = own_config.get('url')
+        cert_location = own_config.get('cert-location', "~/.imggen")
         if not url:
             logger.error("connect.url property missing!")
             raise ParameterError("connect.url property missing!")
@@ -64,8 +65,7 @@ class ImageGenerator(object):
         if not trust_password:
             logger.error("connect.trust_password property missing!")
             raise ParameterError("connect.trust_password property missing!")
-        client = utils.authenticate(url,
-                                    trust_password)
+        client = utils.authenticate(url, trust_password, cert_location)
         kwargs.update({
             'client': client
         })

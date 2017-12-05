@@ -98,6 +98,25 @@ clean:
 
 ### Run
 
+**NOTE** if you get this error while running image generator:
+
+```bash
+Traceback (most recent call last):
+  File "/usr/bin/pip3", line 11, in <module>
+    sys.exit(main())
+  File "/usr/lib/python3/dist-packages/pip/__init__.py", line 215, in main
+    locale.setlocale(locale.LC_ALL, '')
+  File "/usr/lib/python3.5/locale.py", line 594, in setlocale
+    return _setlocale(category, locale)
+locale.Error: unsupported locale setting
+```
+
+then as a quick fix, you can run:
+
+```sh
+export LC_ALL=C
+```
+
 Check the help
 
 ```sh
