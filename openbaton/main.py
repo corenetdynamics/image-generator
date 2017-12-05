@@ -159,7 +159,7 @@ class ImageGenerator(object):
                 raise ExecutionError("Script got the following error!: \n%s" % out.stderr)
             write_logs(log_out_dir, out)
             logger.debug("StdOut of script is: \n%s" % out.stdout)
-        if own_config.get('clean-tmp-files', False):
+        if own_config.get('clean-tmp-files', False) and not self.params.dry:
             self.logger.debug("Deleting temporary files from the running container")
             out = container.execute(['sh', '-c', "rm " + tmp_file + "; rm " + dest])
             if out.exit_code != 0:
