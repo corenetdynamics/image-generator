@@ -7,26 +7,41 @@ It will read a configuration from a yaml file, starts a container
 accordingly, copies and runs specific scripts and in the end creates a
 lxc image.
 
-Prerequirements
----------------
-
-You have lxc/lxd installed and configured properly, depending on your
-desired image and scripts the container may need internet connectivity.
-You have at least one lxc image already downloaded which you can find in
-your local lxc image store
+Prerequisites
+-------------
 
 .. code:: sh
 
-    lxc image list
+    sudo apt update && sudo apt install -y python3-pip lxd
 
-Install
--------
+After the installation you will need to configure your lxd environment.
+Depending on your desired image and scripts the container may need
+internet connectivity, so make sure you activate NAT connectivity for
+your containers:
+
+.. code:: sh
+
+    sudo lxd init
+
+    Name of the storage backend to use (dir or zfs) [default=dir]:
+    Would you like LXD to be available over the network (yes/no) [default=no]? yes
+    Address to bind LXD to (not including port) [default=all]:
+    Port to bind LXD to [default=8443]:
+    Trust password for new clients:
+    Again:
+    Do you want to configure the LXD bridge (yes/no) [default=yes]?
+       Do you want to setup an IPv4 subnet? Yes
+          Default values apply for next questions
+       Do you want to setup an IPv6 subnet? No
+
+Install the image generator tool
+--------------------------------
 
 Install via :
 
 .. code:: sh
 
-    pip install image-generator
+    pip3 install image-generator
 
 How to use
 ----------
@@ -35,29 +50,39 @@ It is possible to run it in two way. ``single action`` or with
 ``config file``. The config file is a yaml file containing on the root a
 list of action to be executed in order with some paramters.
 
-Each ``action`` has specific paramters that are listed in the following
+Each ``action`` has specific parameters that are listed in the following
 section
 
 Configure
 ~~~~~~~~~
+
+You have at least one lxc image already downloaded which you can find in
+your local lxc image store
+
+.. code:: sh
+
+    lxc image list
+
+If not, you can import an ubuntu image on the local image repo with the
+following command:
+
+.. code:: sh
+
+    lxc image copy ubuntu:16.04 local:
+
+And take note of the fingerprint you need for the next steps.
 
 The config file should look like:
 
 .. code:: yaml
 
     connect:
-      url:                        < The URL with port where to reach lxc >               # Mandatory
-      trust-password:             < The trust password you have set >                    # Mandatory 
-
-    # Both of these values require that you have set the related values in the lxc config
-        # lxc config set core.https_address "[::]"
-        # lxc config set core.trust_password < Your Password here >
+      url:                        < The URL with port where to reach lxd engine >               # Mandatory
+      trust-password:             < The trust password you have set for the lxd environment >                    # Mandatory
 
     create-container:
       container-name:               < The name of the container which will be created >                                 # default: "image-generator"
       container-image-fingerprint:  < The fingeprint of the image which will be used as base image for the container >  # Mandatory; you do not need the complete image fingerprint, the one shown by lxc image list is enough
-
-
 
     copy-files:
       file-tarball: < Path to the tar archive containing all scripts you want to push on the image >  # default: "./etc/files.tar"
@@ -112,4 +137,4 @@ Uninstall via :
 
 .. code:: sh
 
-    pip uninstall image-generator
+    pip3 uninstall image-generator
