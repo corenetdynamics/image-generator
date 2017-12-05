@@ -63,7 +63,7 @@ def check_config(config: dict) -> (bool, str):
 
 
 def generate_certificates(key_name: str = 'image-generator',
-                          cert_location: str = '~/.imggen',
+                          cert_location: str = '.imggen',
                           common_name: str = 'image-generator-lxd',
                           days: int = 364) -> (bytes, bytes):
     if not os.path.exists(cert_location):
