@@ -37,6 +37,13 @@ def stop_spin(msg: str):
     return
 
 
+def write_logs(log_out_dir, out):
+    with open("%s/out.log" % log_out_dir, "w", encoding='utf-8') as f:
+        f.write(out.stdout.encode('utf-8', 'replace').decode('utf-8', "replace"))
+    with open("%s/err.log" % log_out_dir, "w", encoding='utf-8') as f:
+        f.write(out.stderr.encode('utf-8', 'replace').decode('utf-8', "replace"))
+
+
 class ImageGenerator(object):
     def __init__(self, lgr, params, process_steps: dict):
         self.logger = lgr
@@ -135,16 +142,31 @@ class ImageGenerator(object):
         unpack = "tar -xvf " + dest + "; "
         # And execute the desired script
         install_script = own_config.get('script')
+        log_out_dir = own_config.get('log-dir', "./logs")
+        if not os.path.exists(log_out_dir):
+            os.makedirs(log_out_dir)
         if not install_script:
             logger.error("execute-script.script is mandatory!")
             raise ParameterError("execute-script.script is mandatory!")
         install = "./" + install_script
 
         if not self.params.dry:
-            container.execute(['sh', '-c', file_wait_loop + decode + unpack + install])
-        if own_config.get('clean-tmp-files', False):
+            out = container.execute(['sh', '-c', file_wait_loop + decode + unpack + install])
+            logger.info("Exit status of script is: \n%s" % out.exit_code)
+            if out.exit_code != 0:
+                logger.error("Script got the following error!: \n%s" % out.stderr)
+                write_logs(log_out_dir, out)
+                raise ExecutionError("Script got the following error!: \n%s" % out.stderr)
+            write_logs(log_out_dir, out)
+            logger.debug("StdOut of script is: \n%s" % out.stdout)
+        if own_config.get('clean-tmp-files', False) and not self.params.dry:
             self.logger.debug("Deleting temporary files from the running container")
-            container.execute(['sh', '-c', "rm " + tmp_file + "; rm " + dest])
+            out = container.execute(['sh', '-c', "rm " + tmp_file + "; rm " + dest])
+            if out.exit_code != 0:
+                logger.error("Script got the following error!: \n%s" % out.stderr)
+                raise ExecutionError("Script got the following error!: \n%s" % out.stderr)
+            else:
+                logger.debug("StdOut of script is: \n%s" % out.stdout)
         # Stop the container when finishing the execution of scripts
         self.logger.debug("Stopping container in order to create the image")
         container.stop(wait=True)
@@ -260,7 +282,7 @@ def main():
     process_steps = {}
     if args.file:
         with open(args.file, "r") as f:
-            process_steps = yaml.load(f.read())
+            process_steps = utils.ordered_load(f.read(), yaml.SafeLoader)
 
     if process_steps:
         ok, msg = utils.check_config(process_steps)
