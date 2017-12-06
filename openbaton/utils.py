@@ -8,6 +8,7 @@ import pylxd
 import yaml
 from OpenSSL import crypto
 from pylxd import Client as LxdClient
+from contextlib import contextmanager
 
 logger = logging.getLogger("img.gen.utils")
 
@@ -16,9 +17,17 @@ ALLOWED_ACTIONS = {
     "create-container": ["container-name", "container-image-fingerprint"],
     "copy-files": ["file-tarball", "file-dest"],
     "execute-script": ["script", "clean-tmp-files"],
-    "create-image": ["destination", "alias"],
+    "create-image": ["destination", "alias", "name"],
     "clean": ["tmp-files", "container", "image-store"]
 }
+
+
+@contextmanager
+def pushd(newDir):
+    previousDir = os.getcwd()
+    os.chdir(newDir)
+    yield
+    os.chdir(previousDir)
 
 
 def ordered_load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):

@@ -2,10 +2,12 @@ import argparse
 import base64
 import logging
 import os
+import shutil
 import threading
 import time
 import traceback
 
+import subprocess
 import urllib3
 import yaml
 from progress.spinner import Spinner
@@ -190,19 +192,47 @@ class ImageGenerator(object):
             if image.fingerprint.startswith(created_fingeprint):
                 logger.debug("Found the published image.. exporting")
                 # And export the image accordingly
-                filename = own_config.get('destination', "gen-image")
+                destination = own_config.get('destination', "/tmp/")
+                filename = own_config.get('name', "generated-image")
                 # Check for the correct file ending
                 if not filename.endswith('tar.gz'):
                     filename = filename + ".tar.gz"
                 # Check if the file already exists and delete if necessary
-                if os.path.exists(filename):
-                    os.remove(filename)
-                with open(filename, "wb") as image_file:
+                destination_file_path = os.path.join(destination, filename)
+                if os.path.exists(destination_file_path):
+                    os.remove(destination_file_path)
+                with open(destination_file_path, "wb") as image_file:
                     logger.debug("Exporting image to: %s" % filename)
                     image_file.write(image.export().read())
 
+                destination_temp_folder = os.path.join(destination, ".tmp")
+                if os.path.exists(destination_temp_folder):
+                    shutil.rmtree(destination_temp_folder)
+                os.mkdir(destination_temp_folder)
+                subprocess.run(["mv", destination_file_path, destination_temp_folder])
+                with utils.pushd(destination_temp_folder):
+                    try:
+                        output = subprocess.check_output(["tar", "-xvzf", filename])
+                    except subprocess.CalledProcessError as e:
+                        pass
+                    with utils.pushd('rootfs'):
+                        try:
+                            shutil.rmtree(os.path.join(destination_temp_folder, 'rootfs', 'var/lib/cloud'))
+                            os.makedirs(os.path.join(destination_temp_folder, 'rootfs', 'var/lib/cloud'))
+                            # output = subprocess.check_output(["rm", "-rf", 'var/lib/cloud/*'])
+                        except subprocess.CalledProcessError as e:
+                            pass
+                        try:
+                            output = subprocess.check_output(
+                                ["tar", "-cvzf", destination_file_path, "bin/", "boot/", "dev/", "etc/", "home/",
+                                 "lib/",
+                                 "lib64/", "media/", "mnt/", "opt/", "proc/", "root/", "run/", "sbin/", "snap/", "srv/",
+                                 "sys/", "tmp/", "usr/", "var/"])
+                        except subprocess.CalledProcessError as e:
+                            pass
+                shutil.rmtree(destination_temp_folder)
                 kwargs.update({
-                    "filename": filename,
+                    "filename": destination_file_path,
                     "image": image,
                     "created_fingeprint": created_fingeprint,
                 })

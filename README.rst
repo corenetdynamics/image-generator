@@ -94,9 +94,9 @@ The config file should look like:
       # lxc always assumes you are in /root, thus take care if you use relative paths to the scripts here
 
     create-image:
-      destination: < Path and Name of the image you are saving >                # default: "gen-image"
+      destination: < Path of the folder where the image will be saved >         # default: "/tmp"
       alias: <additional alias to give to the created image>                    # default: "Published by image-generator"
-
+      name: <name of the result image>                                          # generated-image
     # if the destination does not yet contain the ending tar.gz it will be added automatically
 
     clean:

@@ -15,8 +15,12 @@ execute-script:
   clean-tmp-files: True
 
 create-image:
-  destination: /tmp/generated-image
+  destination: /tmp
+  name: generated-image
+  alias: "Published by image-generator"
 
 clean:
   container: True
   image-store: True
+
+
