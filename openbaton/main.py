@@ -2,9 +2,6 @@ import argparse
 import base64
 import logging
 import os
-import shutil
-import tarfile
-import tempfile
 import threading
 import time
 import traceback
@@ -170,15 +167,15 @@ class ImageGenerator(object):
                 raise ExecutionError("Script got the following error!: \n%s" % out.stderr)
             else:
                 logger.debug("StdOut of script is: \n%s" % out.stdout)
+        # Stop the container when finishing the execution of scripts
+        self.logger.debug("Stopping container in order to create the image")
+        container.stop(wait=True)
         return kwargs
 
     def do_create_image(self, own_config: dict, **kwargs):
         container = kwargs.get('container')
         client = kwargs.get('client')
         container_name = kwargs.get('container_name')
-        # Stop the container when finishing the execution of scripts
-        self.logger.debug("Stopping container in order to create the image")
-        container.stop(wait=True)
         self.logger.debug("Starting to create the image, this can take a few minutes")
         created_image = container.publish(wait=True)
         time.sleep(2)
@@ -200,51 +197,17 @@ class ImageGenerator(object):
                 # Check if the file already exists and delete if necessary
                 if os.path.exists(filename):
                     os.remove(filename)
-                image_file = tempfile.NamedTemporaryFile(delete=False)
-                logger.debug("Exporting image to: %s" % filename)
-                image_file.write(image.export().read())
+                with open(filename, "wb") as image_file:
+                    logger.debug("Exporting image to: %s" % filename)
+                    image_file.write(image.export().read())
 
-                image_file.close()
                 kwargs.update({
-                    "image_file": image_file.name,
+                    "filename": filename,
                     "image": image,
                     "created_fingeprint": created_fingeprint,
                 })
                 return kwargs
         raise ImageCreatedNotFound("Create Image was not found! This should not happen...")
-
-    def do_rework_tar(self, own_config: dict, **kwargs):
-        filename = kwargs.get('image_file')
-        destination = own_config.get('destination')
-        if not destination.endswith(".tar.gz"):
-            destination = "%s.tar.gz" % destination
-        temp_dir = own_config.get('tempdir')
-        if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
-        os.makedirs(temp_dir)
-        # fail_on_error = own_config.get('fail-on-error', False)
-        delete_temp_folder = own_config.get('delete-tmp', True)
-        with tarfile.open(filename, mode="r:gz") as tar:
-            tar.extractall(path=temp_dir)
-            tar.close()
-
-        def exclude_var(fname):
-            if 'var/lib/cloud/' in fname:
-                return True
-            return False
-
-        for f in os.listdir(temp_dir):
-            if f == 'rootfs':
-                rootfs = os.path.join(temp_dir, f)
-                with tarfile.open(destination, "w:gz") as tar:
-                    for inf in os.listdir(rootfs):
-                        path_to_add = os.path.join(rootfs, inf)
-                        self.logger.debug("adding %s" % path_to_add)
-                        tar.add(path_to_add, arcname=inf, exclude=exclude_var)
-        if delete_temp_folder:
-            shutil.rmtree(temp_dir)
-        # remove temp file
-        os.remove(filename)
 
     def do_clean(self, own_config: dict, **kwargs):
 
@@ -291,7 +254,7 @@ def execute_steps(process_steps: dict, params: dict):
                 "also implement respective method {}".format(mname, img_gen.__class__.__name__, method_name, mname))
         t = threading.Thread(target=start_spin, args=("Starting %s..." % method_name,))
         t.start()
-        method_params.update(method(own_config=process_steps.get(method_name) or {}, **method_params))
+        method_params.update(method(own_config=process_steps.get(method_name), **method_params))
         stop_spin("Finished %s." % method_name)
         t.join()
 

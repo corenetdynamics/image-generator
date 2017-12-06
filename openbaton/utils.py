@@ -17,7 +17,6 @@ ALLOWED_ACTIONS = {
     "copy-files": ["file-tarball", "file-dest"],
     "execute-script": ["script", "clean-tmp-files"],
     "create-image": ["destination", "alias"],
-    "rework-tar": ["tempdir", "delete-tmp", "destination", 'fail-on-error'],
     "clean": ["tmp-files", "container", "image-store"]
 }
 
@@ -56,14 +55,10 @@ def check_config(config: dict) -> (bool, str):
     for k in config.keys():
         if k not in ALLOWED_ACTIONS.keys():
             return False, "action %s is not in allowed actions, please choose between %s" % (k, ALLOWED_ACTIONS.keys())
-        actions = config.get(k)
-        if actions:
-            for v in actions.keys():
-                if v not in ALLOWED_ACTIONS.get(k):
-                    return False, "field %s is not in allowed field for action '%s', please choose between %s" % (
-                        v, k, ALLOWED_ACTIONS.get(k))
-        else:
-            config[k] = {}
+        for v in config.get(k).keys():
+            if v not in ALLOWED_ACTIONS.get(k):
+                return False, "field %s is not in allowed field for action '%s', please choose between %s" % (
+                    v, k, ALLOWED_ACTIONS.get(k))
     return True, None
 
 
