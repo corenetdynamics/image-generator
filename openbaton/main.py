@@ -42,9 +42,11 @@ def stop_spin(msg: str):
 
 
 def write_logs(log_out_dir, out):
-    with open("%s/out.log" % log_out_dir, "w", encoding='utf-8') as f:
+    if not os.path.exists(log_out_dir):
+        os.makedirs(log_out_dir)
+    with open("%s/out.log" % log_out_dir, "w+", encoding='utf-8') as f:
         f.write(out.stdout.encode('utf-8', 'replace').decode('utf-8', "replace"))
-    with open("%s/err.log" % log_out_dir, "w", encoding='utf-8') as f:
+    with open("%s/err.log" % log_out_dir, "w+", encoding='utf-8') as f:
         f.write(out.stderr.encode('utf-8', 'replace').decode('utf-8', "replace"))
 
 

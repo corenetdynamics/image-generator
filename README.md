@@ -100,7 +100,7 @@ clean:
 
 **NOTE** if you get this error while running image generator:
 
-```bash
+```text
 Traceback (most recent call last):
   File "/usr/bin/pip3", line 11, in <module>
     sys.exit(main())
@@ -133,11 +133,23 @@ optional arguments:
   -dry                  Run dryrun
 ```
 
-and then run it
+and then run it **with sudo**:
 
 ```sh
-image-generator -f <PATH-TO-THE-CONFIGURATION-FILE>
+sudo image-generator -f <PATH-TO-THE-CONFIGURATION-FILE>
 ```
+
+sudo rights are needed only because it is required by the process of extracting the image downloaded from lxd. 
+
+### Test it
+
+for testing it is possible to do a dry run by running:
+
+```sh
+sudo image-generator -f <PATH-TO-THE-CONFIGURATION-FILE> -dry --debug
+```
+
+it will execute every step but the installation script and finally will also delete the downloaded image.
 
 ## Uninstall
 

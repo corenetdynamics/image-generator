@@ -4,7 +4,7 @@ connect:
 
 create-container:
   container-name: image-generation-container
-  container-image-fingerprint: 3927ed0cb91f
+  container-image-fingerprint: 5f364e2e3f46
 
 copy-files:
   file-tarball: /etc/image-generator/files.tar
