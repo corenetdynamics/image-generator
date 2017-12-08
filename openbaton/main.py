@@ -1,13 +1,15 @@
 import argparse
 import base64
+import datetime
 import logging
+import logging.config
 import os
 import shutil
+import subprocess
 import threading
 import time
 import traceback
 
-import subprocess
 import urllib3
 import yaml
 from progress.spinner import Spinner
@@ -195,9 +197,17 @@ class ImageGenerator(object):
                 destination = own_config.get('destination', "/tmp/")
                 filename = own_config.get('name', "generated-image")
                 # Check for the correct file ending
+                datetime_now = datetime.datetime.now()
+                datestring = "%s_%s_%s-%s_%s" % (
+                    datetime_now.year,
+                    datetime_now.month,
+                    datetime_now.day,
+                    datetime_now.hour,
+                    datetime_now.minute
+                )
                 if not filename.endswith('tar.gz'):
-                    filename = filename + ".tar.gz"
-                # Check if the file already exists and delete if necessary
+                    filename = "%s-%s.%s" % (datestring, filename, "tar.gz")
+                    # Check if the file already exists and delete if necessary
                 destination_file_path = os.path.join(destination, filename)
                 if os.path.exists(destination_file_path):
                     os.remove(destination_file_path)
@@ -305,7 +315,10 @@ def main():
     args = parser.parse_args()
     print()
     if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
+        if os.path.exists('logging.conf') and os.path.isfile('logging.conf'):
+            logging.config.fileConfig('logging.conf')
+        else:
+            logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.WARNING)
 

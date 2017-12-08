@@ -17,7 +17,7 @@ packages = find_packages()
 
 setup(
     name="image-generator",
-    version="1.1.0",
+    version="1.1.1",
     author="Open Baton Dev",
     author_email="dev@openbaton.org",
     description="The Image Generator",
@@ -37,5 +37,10 @@ setup(
         "Intended Audience :: Developers",
         "Programming Language :: Python :: 3.5",
         "License :: OSI Approved :: Apache Software License",
-    ]
+    ],
+    package_data={
+        "image-generator": [
+            "logging.conf",
+        ]
+    },
 )
