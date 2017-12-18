@@ -5,8 +5,11 @@ A python based generator for lxc images.
 It will read a configuration from a yaml file, starts a container accordingly,
 copies and runs specific scripts and in the end creates a lxc image.
 
-## Prerequisites
+The following video showcases step by step the instructions detailed on this README: 
 
+[![asciicast](https://asciinema.org/a/153313.png)](https://asciinema.org/a/153313)
+
+## Prerequisites
 
 ```sh
 sudo apt update && sudo apt install -y python3-pip lxd
