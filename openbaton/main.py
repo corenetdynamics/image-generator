@@ -182,6 +182,12 @@ class ImageGenerator(object):
         container = kwargs.get('container')
         client = kwargs.get('client')
         container_name = kwargs.get('container_name')
+        for img in client.images.all():
+            for alias in img.aliases:
+                if alias.get('name') == container_name:
+                    self.logger.debug("Deleting image: %s" % img.fingerprint)
+                    img.delete()
+                    break
         self.logger.debug("Starting to create the image, this can take a few minutes")
         created_image = container.publish(wait=True)
         time.sleep(2)
@@ -231,15 +237,13 @@ class ImageGenerator(object):
                         try:
                             shutil.rmtree(os.path.join(destination_temp_folder, 'rootfs', 'var/lib/cloud'))
                             os.makedirs(os.path.join(destination_temp_folder, 'rootfs', 'var/lib/cloud'))
-                            # output = subprocess.check_output(["rm", "-rf", 'var/lib/cloud/*'])
                         except subprocess.CalledProcessError as e:
                             pass
                         try:
                             output = subprocess.check_output(
-                                ["tar", "-cvzf", destination_file_path, "bin/", "boot/", "dev/", "etc/", "home/",
-                                 "lib/",
-                                 "lib64/", "media/", "mnt/", "opt/", "proc/", "root/", "run/", "sbin/", "snap/", "srv/",
-                                 "sys/", "tmp/", "usr/", "var/"])
+                                ["tar", "-cvzf", destination_file_path,
+                                 "bin/", "boot/", "dev/", "etc/", "home/", "lib/", "lib64/", "media/", "mnt/", "opt/",
+                                 "proc/", "root/", "run/", "sbin/", "snap/", "srv/", "sys/", "tmp/", "usr/", "var/"])
                         except subprocess.CalledProcessError as e:
                             pass
                 shutil.rmtree(destination_temp_folder)
@@ -287,18 +291,19 @@ def execute_steps(process_steps: dict, params: dict):
     for method_name in process_steps.keys():
         mname = "do_%s" % method_name.replace("-", "_")
         img_gen = ImageGenerator(logging.getLogger("img.gen.ImageGen"), params, process_steps)
-
         try:
             method = getattr(img_gen, mname)
         except AttributeError:
             raise MethodNotFound(
                 "Method with name {} not found in Class `{}`. This should not happen, if you allowed action {} please "
                 "also implement respective method {}".format(mname, img_gen.__class__.__name__, method_name, mname))
-        t = threading.Thread(target=start_spin, args=("Starting %s..." % method_name,))
-        t.start()
+        if not img_gen.logger.isEnabledFor(logging.DEBUG):
+            t = threading.Thread(target=start_spin, args=("Starting %s..." % method_name,))
+            t.start()
         method_params.update(method(own_config=process_steps.get(method_name), **method_params))
         stop_spin("Finished %s." % method_name)
-        t.join()
+        if not img_gen.logger.isEnabledFor(logging.DEBUG):
+            t.join()
 
 
 def main():
