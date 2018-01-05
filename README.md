@@ -11,9 +11,26 @@ The following video showcases step by step the instructions detailed on this REA
 
 ## Prerequisites
 
+
+#### Auto install
+**NOTE**: If you are installing it in a clean machine (for instance a clean ubuntu 16.04 VM), you can run [this installation script](https://github.com/corenetdynamics/image-generator/raw/master/install.sh)
+
+#### Manual install
+
+##### Configure locales
+
+```bash
+export LC_ALL="en_US.UTF-8"
+export LC_CTYPE="en_US.UTF-8"
+sudo dpkg-reconfigure -f noninteractive locales
+```
+##### Install pip and lxd
+
 ```sh
 sudo apt update && sudo apt install -y python3-pip lxd
 ```
+
+##### Configure lxd
 
 After the installation you will need to configure your lxd environment.
 Depending on your desired image and scripts the container may need internet connectivity,
@@ -34,23 +51,17 @@ Do you want to configure the LXD bridge (yes/no) [default=yes]?
    Do you want to setup an IPv6 subnet? No
 ```
 
-
 ## Install the image generator tool
 
 Install via :
 
-```sh
-pip3 install image-generator
+```bash
+sudo pip3 install image-generator
 ```
 
-## How to use
+### Configure 
 
-It is possible to run it in two way. `single action` or with `config file`. The config file is a yaml file containing on the root a list of action to be executed in order with some paramters.
-
-Each `action` has specific parameters that are listed in the following section
-
-### Configure
-
+It is possible to run the `image-generator` with a config file. The config file is a yaml file containing on the root a list of action to be executed in order with some paramters. Each `action` has specific parameters.
 You have at least one lxc image already downloaded which you can find in your local lxc image store
 
 ```sh
@@ -99,31 +110,30 @@ clean:
 # You can (re)import the images anytime by lxc image import < Your path to the desired image.tar.gz > --alias < Your Alias here >
 ```
 
-### Run
+For default values you can run:
 
-**NOTE** if you get this error while running image generator:
+```bash
+# getting default yaml file
+wget https://raw.githubusercontent.com/corenetdynamics/image-generator/master/etc/image.yaml
 
-```text
-Traceback (most recent call last):
-  File "/usr/bin/pip3", line 11, in <module>
-    sys.exit(main())
-  File "/usr/lib/python3/dist-packages/pip/__init__.py", line 215, in main
-    locale.setlocale(locale.LC_ALL, '')
-  File "/usr/lib/python3.5/locale.py", line 594, in setlocale
-    return _setlocale(category, locale)
-locale.Error: unsupported locale setting
+# Update password: $password is the lxd trust password chosen while configuring it
+sed -i "s/openbatontotalsecret/$password/g" image.yaml
+
+# Update the fingerprint in the yaml file
+fingerprint=$(lxc image list | grep "ubuntu 16.04 LTS amd64 (release)"| awk '{split($0,a,"|"); print a[3]}' | xargs)
+sed -i "s/5f364e2e3f46/$fingerprint/g" image.yaml
+
+# place the tar file containing the script to be executed in the default location
+sudo mkdir /etc/image-generator
+sudo wget https://github.com/corenetdynamics/image-generator/raw/master/files.tar -O /etc/image-generator/files.tar
 ```
 
-then as a quick fix, you can run:
-
-```sh
-export LC_ALL=C
-```
+## Run
 
 Check the help
 
-```sh
-image-generator --help
+```bash
+sudo image-generator --help
 usage: image-generator [-h] [-f FILE] [-d] [-action ACTION] [-params PARAMS]
                        [-dry]
 
@@ -138,18 +148,18 @@ optional arguments:
 
 and then run it **with sudo**:
 
-```sh
-sudo image-generator -f <PATH-TO-THE-CONFIGURATION-FILE>
+```bash
+sudo image-generator -f image.yaml
 ```
 
-sudo rights are needed only because it is required by the process of extracting the image downloaded from lxd. 
+###### sudo rights are needed only because it is required by the process of extracting the image downloaded from lxd. 
 
 ### Test it
 
-for testing it is possible to do a dry run by running:
+for testing purposes, it is possible to do a dry run by running:
 
-```sh
-sudo image-generator -f <PATH-TO-THE-CONFIGURATION-FILE> -dry --debug
+```bash
+sudo image-generator -f image.yaml -dry --debug
 ```
 
 it will execute every step but the installation script and finally will also delete the downloaded image.
@@ -158,6 +168,6 @@ it will execute every step but the installation script and finally will also del
 
 Uninstall via :
 
-```sh
-pip3 uninstall image-generator
+```bash
+sudo pip3 uninstall image-generator
 ```
