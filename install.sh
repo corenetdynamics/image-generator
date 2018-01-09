@@ -54,7 +54,7 @@ sed -i "s/openbatontotalsecret/$password/g" image.yaml
 echo "Copy ubuntu image locally"
 lxc image copy ubuntu:16.04 local:
 
-echo "Finding fingerprint"
+echo "Searching fingerprint"
 fingerprint=$(lxc image list | grep "ubuntu 16.04 LTS amd64 (release)"| awk '{split($0,a,"|"); print a[3]}' | xargs)
 echo "Found fingerprint $fingerprint"
 
@@ -62,6 +62,6 @@ sed -i "s/5f364e2e3f46/$fingerprint/g" image.yaml
 
 sudo mkdir /etc/image-generator
 
-sudo wget https://github.com/corenetdynamics/image-generator/raw/master/files.tar -O /etc/image-generator/files.tar
+echo "Installation conclueded. Run the 'run.sh' to create the image."
 
-sudo image-generator -f image.yaml # --debug -dry
+exit 0

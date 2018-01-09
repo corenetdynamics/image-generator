@@ -9,13 +9,32 @@ The following video showcases step by step the instructions detailed on this REA
 
 [![asciicast](https://asciinema.org/a/153313.png)](https://asciinema.org/a/153313)
 
-## Prerequisites
+## Auto install
 
+There are two scripts for installation and execution. 
 
-#### Auto install
-**NOTE**: If you are installing it in a clean machine (for instance a clean ubuntu 16.04 VM), you can run [this installation script](https://github.com/corenetdynamics/image-generator/raw/master/install.sh)
+* [install.sh](https://github.com/corenetdynamics/image-generator/raw/master/install.sh)
+* [run.sh](https://github.com/corenetdynamics/image-generator/raw/master/run.sh)
 
-#### Manual install
+The first script will run the steps described in the `Manual install` section. The second one will execute the `Run` section steps.
+
+Thus, in order to install and run the image-generator in an automated way, you can run:
+
+```bash
+wget https://github.com/corenetdynamics/image-generator/raw/master/install.sh
+wget https://github.com/corenetdynamics/image-generator/raw/master/run.sh
+
+# install image generator and follow the instructions
+./install.sh
+
+# Run it: "Usage: run.sh [-f <yaml-config-file>] [-l <git-link> -s <script-name>] [-d]". For default values just run it as follows
+./run.sh 
+
+```  
+
+## Manual install
+
+#### Prerequisites
 
 ##### Configure locales
 
@@ -51,7 +70,7 @@ Do you want to configure the LXD bridge (yes/no) [default=yes]?
    Do you want to setup an IPv6 subnet? No
 ```
 
-## Install the image generator tool
+#### Install the image generator tool
 
 Install via :
 
@@ -59,7 +78,7 @@ Install via :
 sudo pip3 install image-generator
 ```
 
-### Configure 
+#### Configure 
 
 It is possible to run the `image-generator` with a config file. The config file is a yaml file containing on the root a list of action to be executed in order with some paramters. Each `action` has specific parameters.
 You have at least one lxc image already downloaded which you can find in your local lxc image store
