@@ -15,9 +15,9 @@ while getopts ":f:l:s:d" o; do
             ;;
         l)
             LINK=${OPTARG}
-	    git ls-remote "$LINK" &>-
+	    git ls-remote "${LINK}" &>-
             if [ "$?" -ne 0 ]; then
-              echo "Unable to read from '$SITE_REPO_URL'" 1>&2
+              echo "Unable to read from ${LINK}" 1>&2
               exit 3;
             fi
             ;;
@@ -36,28 +36,31 @@ shift $((OPTIND-1))
 
 if [ -z "${CONFIG_FILE}" ] ;then
     CONFIG_FILE=image.yaml
-    [ -e $CONFIG_FILE ] || echo "File $CONFIG_FILE not found, run the install first or provide a config file" 1>&2; usage
+    if [ ! -e $CONFIG_FILE ] ; then
+     echo "File $CONFIG_FILE not found, run the install.sh first or provide a config file" 1>&2; usage
+    fi
 fi
-
 
 if [ -z "${LINK}" ] ;then
-    LINK=https://github.com/RuthDevlaeminck/OAI_VNF.git
-    SCRIPT=oai_image_create.sh
+    # TODO update with right repo
+    # LINK=https://github.com/RuthDevlaeminck/OAI_VNF.git
+    # SCRIPT=oai_image_create.sh
+    sudo wget https://github.com/corenetdynamics/image-generator/raw/master/files.tar -O /etc/image-generator/files.tar
 elif [ ! -z ${LINK} ] && [ -z ${SCRIPT} ]; then
     echo "Link is provided but no script to execute, please provide also script name" 1>&2; usage
+else
+    git clone ${LINK} _scripts
+
+    pushd _scripts
+    tar -cvf ../files.tar *
+    popd
+
+    sudo mv files.tar /etc/image-generator/files.tar
+    sed -i "s/oai_image_create.sh/$SCRIPT/g" ${CONFIG_FILE}
+
+    rm -rf _scripts
 fi
 
-git clone $LINK _scripts
-
-pushd _scripts
-tar -cvf ../files.tar *
-popd
-
-sudo mv files.tar /etc/image-generator/files.tar
-
-sed -i "s/oai_image_create.sh/$SCRIPT/g" ${CONFIG_FILE}
-
-rm -rf _scripts
 
 if [ "${DRY}" = true  ] ; then 
 	sudo image-generator -f image.yaml --debug -dry

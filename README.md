@@ -25,9 +25,11 @@ wget https://github.com/corenetdynamics/image-generator/raw/master/install.sh
 wget https://github.com/corenetdynamics/image-generator/raw/master/run.sh
 
 # install image generator and follow the instructions
+chmod +x install.sh
 ./install.sh
 
 # Run it: "Usage: run.sh [-f <yaml-config-file>] [-l <git-link> -s <script-name>] [-d]". For default values just run it as follows
+chmod +x run.sh
 ./run.sh 
 
 ```  
