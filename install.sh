@@ -43,6 +43,9 @@ sudo lxd init
 # but does not work, thus the configuration will be prompted
 
 sudo pip3 install image-generator
+sudo apt-get --auto-remove --yes remove python-openssl
+sudo pip3 install pyOpenSSL
+pip3 install pyOpenSSL
 
 wget https://raw.githubusercontent.com/corenetdynamics/image-generator/master/etc/image.yaml
 
